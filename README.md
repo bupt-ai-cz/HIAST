@@ -33,7 +33,7 @@ conda activate HIAST
 pip install -r requirements.txt
 ```
 
-2. Install [apex](https://github.com/NVIDIA/apex#linux) for easy mixed precision and distributed training in Pytorch. If you encounter problems, please see this [solution](https://github.com/NVIDIA/apex/issues/802#issuecomment-618699214).
+3. Install [apex](https://github.com/NVIDIA/apex#linux) for easy mixed precision and distributed training in Pytorch. If you encounter problems, please see this [solution](https://github.com/NVIDIA/apex/issues/802#issuecomment-618699214).
 
 ### Dataset
 
