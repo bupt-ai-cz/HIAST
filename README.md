@@ -4,17 +4,17 @@
 
 ### Introduction
 
-The divergence between labeled training data and unlabeled testing data is a significant challenge for recent deep learning models. Unsupervised domain adaptation (UDA) attempts to solve such problem. Recent works show that self-training is a powerful approach to UDA. However, existing methods have difficulty in balancing the scalability and performance. In this paper, we propose a hard-aware instance adaptive self-training framework for UDA on the task of semantic segmentation. To effectively improve the quality and diversity of pseudo-labels, we develop a novel pseudo-label generation strategy with an instance adaptive selector. We further enrich the hard class pseudo-labels with inter-image information through a skillfully designed hard-aware pseudo-label augmentation. Besides, we propose the region-adaptive regularization to smooth the pseudo-label region and sharpen the non-pseudo-label region. For the non-pseudo-label region, consistency constraint is also constructed to introduce stronger supervision signals during model optimization. Our method is so concise and efficient that it is easy to be generalized to other UDA methods. Experiments on GTA5 ![\rightarrow](https://render.githubusercontent.com/render/math?math=\rightarrow&mode=inline) Cityscapes, SYNTHIA ![\rightarrow](https://render.githubusercontent.com/render/math?math=\rightarrow&mode=inline) Cityscapes, and Cityscapes ![\rightarrow](https://render.githubusercontent.com/render/math?math=\rightarrow&mode=inline) Oxford RobotCar demonstrate the superior performance of our approach compared with the state-of-the-art methods.
+The divergence between labeled training data and unlabeled testing data is a significant challenge for recent deep learning models. Unsupervised domain adaptation (UDA) attempts to solve such problem. Recent works show that self-training is a powerful approach to UDA. However, existing methods have difficulty in balancing the scalability and performance. In this paper, we propose a hard-aware instance adaptive self-training framework for UDA on the task of semantic segmentation. To effectively improve the quality and diversity of pseudo-labels, we develop a novel pseudo-label generation strategy with an instance adaptive selector. We further enrich the hard class pseudo-labels with inter-image information through a skillfully designed hard-aware pseudo-label augmentation. Besides, we propose the region-adaptive regularization to smooth the pseudo-label region and sharpen the non-pseudo-label region. For the non-pseudo-label region, consistency constraint is also constructed to introduce stronger supervision signals during model optimization. Our method is so concise and efficient that it is easy to be generalized to other UDA methods. Experiments on GTA5-to-Cityscapes, SYNTHIA-to-Cityscapes, and Cityscapes-to-Oxford RobotCar demonstrate the superior performance of our approach compared with the state-of-the-art methods.
 
 <img src="imgs/framework.png" alt="framework" style="zoom: 80%;" />
 
 ### Result
 
-|              UDA  Scenarios              | mIoU-19 | mIoU-16 | mIoU-13 | mIoU-9 |
-| :--------------------------------------: | :-----: | :-----: | :-----: | :----: |
-|      GTA5 $\rightarrow$ Cityscapes       |  56.2   |    -    |    -    |   -    |
-|     SYNTHIA $\rightarrow$ Cityscapes     |    -    |  54.6   |  61.7   |   -    |
-| Cityscapes $\rightarrow$ Oxford RobotCar |    -    |    -    |    -    |  75.4  |
+|        UDA  Scenarios         | mIoU-19 | mIoU-16 | mIoU-13 | mIoU-9 |
+| :---------------------------: | :-----: | :-----: | :-----: | :----: |
+|      GTA5-to-Cityscapes       |  56.2   |    -    |    -    |   -    |
+|     SYNTHIA-to-Cityscapes     |    -    |  54.6   |  61.7   |   -    |
+| Cityscapes-to-Oxford RobotCar |    -    |    -    |    -    |  75.4  |
 
 ## Setup
 
@@ -67,7 +67,7 @@ HIAST
 
 ### Pretrained
 
-We have provided the final [model file](https://drive.google.com/drive/folders/1-qdT1JqV0XKsk8h_b8zo7tPfF1o0b5Er?usp=sharing) of GTA5 ![\rightarrow](https://render.githubusercontent.com/render/math?math=\rightarrow&mode=inline) Cityscapes for evaluation. Other pretrained files are being prepared.
+We have provided the final [model file](https://drive.google.com/drive/folders/1-qdT1JqV0XKsk8h_b8zo7tPfF1o0b5Er?usp=sharing) of GTA5-to-Cityscapes for evaluation. Other pretrained files are being prepared.
 
 ## Training
 
