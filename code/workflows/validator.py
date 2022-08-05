@@ -99,7 +99,7 @@ class Validator():
                 results = self.get_multi_scale_and_flip_logits(imgs)
                 lbls_pred = results.argmax(dim=1)
 
-                intersection, union = metrics.intersectionAndUnionGPU(lbls_pred, lbls, self.cfg.dataset.num_classes)
+                intersection, union = metrics.intersectionAndUnionGPU(lbls_pred.clone(), lbls, self.cfg.dataset.num_classes)
                 intersection_sum += intersection
                 union_sum += union
 

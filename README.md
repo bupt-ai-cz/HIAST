@@ -77,7 +77,7 @@ Coming soon.
 
 ```bash
 cd code
-python eval.py --config_file configs/gtav-to-cityscapes/validate.yaml --resume_from pretrained/gtav-to-cityscapes/HIAST_final.pth
+python validate.py --config_file configs/gtav-to-cityscapes/validate.yaml --resume_from pretrained/gtav-to-cityscapes/HIAST_final.pth --color_mask_dir_path ../outputs
 ```
 
 ## Contact
