@@ -1,5 +1,7 @@
 # HIAST: Hard-aware Instance Adaptive Self-training for Unsupervised Cross-domain Semantic Segmentation
 
+## This repo. will be updated soon!
+
 ## Overview
 
 ### Introduction
