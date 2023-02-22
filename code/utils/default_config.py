@@ -164,6 +164,4 @@ cfg.preprocessor.copy_paste.mode = 'original'  # 'original', 'consistency', 'mul
 
 ## general setting of copy paste
 cfg.preprocessor.copy_paste.copy_from = 'target'  # 'target', 'source', 表示从哪一个数据集内CP
-cfg.preprocessor.copy_paste.times = 3  # 选择多少张图像来来与CopyPaste
-cfg.preprocessor.copy_paste.selected_num_classes = 12  # 对于每张图像，选择多少个类别
-cfg.preprocessor.copy_paste.gamma = 0.99
+cfg.preprocessor.copy_paste.selected_num_classes = 14  # 对于每张图像，选择多少个类别
