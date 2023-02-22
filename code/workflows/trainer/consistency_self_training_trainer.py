@@ -71,8 +71,6 @@ class ConsistencySelfTrainingTrainer(PreprocessorSelfTrainingTrainer):
         try:
             t = next(self.t_iter)
         except StopIteration:
-            if self.preprocessor is not None:
-                self.preprocessor.update_setting(self.class_value)  # update copy paste setting after 1 epoch
             if self.t_sampler.shuffle:  # if shuffle, reset epoch as random seed
                 self.t_sampler.set_epoch(self.t_sampler.epoch + 1)
             self.t_iter = iter(self.t_loader)
@@ -103,9 +101,5 @@ class ConsistencySelfTrainingTrainer(PreprocessorSelfTrainingTrainer):
 
         # https://discuss.pytorch.org/t/average-loss-in-dp-and-ddp/93306/3，按照这个回答的意思，只要损失被backward，梯度就会在多个进程内被平均，DDP会自动控制的
         losses = self.model.module.compute_loss(t_strong_logits, t_plbl, t_cst_lbl)
-
-        # update class value during training
-        if self.preprocessor is not None:
-            self.update_class_value(t_strong_logits, t_plbl, current_iter)
-
+        
         return losses

@@ -2,6 +2,7 @@
 from torch.utils.data import Dataset
 from sseg.datasets import augmentations, utils
 import os
+import json
 from PIL import Image
 import numpy as np
 import cv2
@@ -21,6 +22,12 @@ class BaseDataset(Dataset):
 
         self.img_path_list, self.lbl_path_list = utils.get_path_list(json_path, image_dir)
         self.aug_fun = utils.get_aug_fun(aug_type, self.build_aug_fun)  # aug_fun or [aug_fun_0, aug_fun_1]
+        
+        self.file_to_idx = {}
+        for idx in range(len(self.img_path_list)):
+            img_idx_name = self.img_path_list[idx].split('/')[-1]
+            self.file_to_idx[img_idx_name] = idx
+
 
         assert len(self.img_path_list) == len(self.lbl_path_list), 'images and labels should have the same number'
 
@@ -100,3 +107,25 @@ class BaseDataset(Dataset):
         lbl = cv2.resize(lbl, img.shape[:-1][::-1], interpolation=cv2.INTER_NEAREST)
 
         return img, lbl, img_path
+    
+    def get_file_to_idx(self, file_name):
+        """Convert the file name to the corresponding index"""
+        return self.file_to_idx[file_name]
+
+    def get_samples_class(self):
+        """Get samples information with class for HPLA"""
+        data_root = self.pseudo_dir.split(self.pseudo_dir.split('/')[-1])[0]
+        with open(os.path.join(data_root, 'samples_with_class.json'), 'r') as of:
+            samples_with_class_and_n = json.load(of)
+            samples_with_class_and_n = {
+                int(k): v  for k, v in samples_with_class_and_n.items()
+            }
+
+        samples_with_class = {}
+        for c in range(self.cfg.dataset.num_classes):
+            samples_with_class[c] = []
+            for file, pixels in sorted(samples_with_class_and_n[c], key=lambda item: item[1]):
+                samples_with_class[c].append(file.split('/')[-1])
+            samples_with_class[c] = samples_with_class[c][round(len(samples_with_class[c])*0.1):]
+        
+        return samples_with_class

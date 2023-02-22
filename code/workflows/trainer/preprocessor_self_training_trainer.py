@@ -64,8 +64,6 @@ class PreprocessorSelfTrainingTrainer(BaseTrainer):
         try:
             t = next(self.t_iter)
         except StopIteration:
-            if self.preprocessor is not None:
-                self.preprocessor.update_setting(self.class_value)  # update copy paste setting after 1 epoch
             if self.t_sampler.shuffle:  # if shuffle, reset epoch as random seed
                 self.t_sampler.set_epoch(self.t_sampler.epoch + 1)
             self.t_iter = iter(self.t_loader)
@@ -77,27 +75,4 @@ class PreprocessorSelfTrainingTrainer(BaseTrainer):
         t_logits = self.model(t_img)['logits']
         losses = self.model.module.compute_loss(t_logits, t_plbl)
 
-        if self.preprocessor is not None:
-            self.update_class_value(t_logits, t_plbl, current_iter)
-
         return losses
-
-    def update_class_value(self, t_strong_logits, t_plbl, current_iter):
-        t_strong_softmax = F.softmax(t_strong_logits.detach(), dim=1)  # [B, C, H, W]
-        probs_pred, lbls_pred = t_strong_softmax.max(dim=1)  # [B, H, W]
-        for c in range(self.cfg.dataset.num_classes):
-            mask_ = (lbls_pred == c) * (t_plbl != 255)  # 只在置信区域进行计算
-
-            sum_value = torch.sum(probs_pred[mask_])
-            select_num = torch.sum(mask_)
-            # 多卡同步
-            dist.all_reduce(sum_value)
-            dist.all_reduce(select_num)
-            mean_value = sum_value / select_num
-
-            if not torch.isnan(mean_value) and not torch.isinf(mean_value):
-                # EMA的方式更新全局的类别平均阈值
-                self.class_value[c] = self.class_value[c] * self.cfg.preprocessor.copy_paste.gamma + \
-                                      mean_value.item() * (1 - self.cfg.preprocessor.copy_paste.gamma)
-        if self.gpu_index == 0:
-            self.writer.add_scalars('train/class_mean_probabilities', {str(c): v for c, v in enumerate(self.class_value)}, current_iter)

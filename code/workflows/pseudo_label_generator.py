@@ -3,21 +3,22 @@ import numpy as np
 import os
 import torch
 from torch.nn import functional as F
-from torch.utils.data import DataLoader, DistributedSampler
+from torch.utils.data import DataLoader
 import tqdm
 from utils.registry.registries import DATASET, PSEUDO_POLICY
 from utils import utils
 import cv2
+import json
 
 
 class BasePseudoGenerator:
 
     def __init__(self, cfg):
         self.cfg = cfg
+        self.samples_class = {i:[] for i in range(self.cfg.dataset.num_classes)}
         self.class_mean_probs = np.zeros(self.cfg.dataset.num_classes)
 
         self.initialize()
-        print('%% pseudo_resize_size: {}'.format(self.cfg.pseudo_policy.resize_size))
 
     def initialize(self):
         # init model
@@ -30,9 +31,7 @@ class BasePseudoGenerator:
                                                                self.cfg.dataset.target.image_dir,
                                                                aug_type=aug_type,
                                                                num_classes=self.cfg.dataset.num_classes)
-        sampler = DistributedSampler(self.t_dataset, num_replicas=1, rank=0)  # fixed the data order by DistributedSampler
-        self.t_loader = DataLoader(self.t_dataset, self.cfg.pseudo_policy.batch_size, sampler=sampler, num_workers=self.cfg.dataset.num_workers,
-                                   pin_memory=True)
+        self.t_loader = DataLoader(self.t_dataset, self.cfg.pseudo_policy.batch_size, shuffle=True, num_workers=self.cfg.dataset.num_workers, pin_memory=True)
 
         self.pseudo_label_save_dir = self.cfg.pseudo_policy.save_dir
         assert self.pseudo_label_save_dir is not None and \
@@ -51,7 +50,12 @@ class BasePseudoGenerator:
 
         print('class mean probabilities: {}'.format(self.class_mean_probs))
         np.save(os.path.join(self.pseudo_label_save_dir, '..', 'class_mean_probabilities.npy'), self.class_mean_probs)
+        
+        class_json = json.dumps(self.samples_class)
+        with open(os.path.join(self.pseudo_label_save_dir, '..', 'samples_with_class.json'), 'a') as f:
+            f.write(class_json)
 
+        
     def run(self):
         raise NotImplementedError
 
@@ -69,6 +73,12 @@ class BasePseudoGenerator:
             else:  # argmax for no threshold policy
                 plbl = lbl_pred
 
+            # add current sample to class i
+            for i in range(self.cfg.dataset.num_classes):
+                pix_num = int(sum(sum((plbl == i))))
+                if pix_num != 0:
+                    self.samples_class[i].append([img_path, pix_num])
+
             self.save_pseudo_label(plbl, img_path)
 
             confident_label_list.append(np.expand_dims(plbl, 0))  # [H, W] to [1, H, W]
@@ -84,6 +94,7 @@ class BasePseudoGenerator:
                 else:
                     self.class_mean_probs[c] = self.class_mean_probs[c] * self.cfg.preprocessor.copy_paste.gamma + \
                                                mean_value * (1 - self.cfg.preprocessor.copy_paste.gamma)
+        return plbl
 
 
 @PSEUDO_POLICY.register('CT')
@@ -162,14 +173,13 @@ class IASPseudoGenerator(BasePseudoGenerator):
         if len(os.listdir(self.pseudo_label_save_dir)) >= len(self.t_dataset):
             print('%% pseudo labels have existed')
         else:
-            print('%% lambda: {}, beta: {}, gamma: {}'.format(self.cfg.pseudo_policy.ias.alpha, self.cfg.pseudo_policy.ias.beta,
-                                                              self.cfg.pseudo_policy.ias.gamma))
             self.class_threshold = 0.9 * np.ones(self.cfg.dataset.num_classes)
             self.model.eval()
             with torch.no_grad():
                 for data in tqdm.tqdm(self.t_loader, desc='Generating pseudo labels (policy: {})'.format(self.cfg.pseudo_policy.type), ncols=160):
                     imgs = data['images'].cuda()
-                    probs = F.softmax(self.model(imgs)['logits'], dim=1)
+                    result = self.model(imgs)
+                    probs = F.softmax(result['logits'], dim=1)
 
                     probs_pred, lbls_pred = probs.max(dim=1)
                     probs_pred = probs_pred.cpu().numpy()
@@ -177,6 +187,7 @@ class IASPseudoGenerator(BasePseudoGenerator):
 
                     # 记录当前batch内被预测为每个类别的像素点概率
                     class_probs_dict = {c: [self.class_threshold[c]] for c in range(self.cfg.dataset.num_classes)}
+                    print(len(class_probs_dict[0]))
                     for c in range(self.cfg.dataset.num_classes):
                         class_probs_dict[c].extend(probs_pred[lbls_pred == c].astype(np.float16))
 
