@@ -86,4 +86,4 @@ python validate.py --config_file configs/gtav-to-cityscapes/validate.yaml --resu
 
 If you encounter any problems please contact us without hesitation.
 
-- Email: tangwenqi@bupt.edu.cn, czhu@bupt.edu.cn
+- Email: liukebin@bupt.edu.cn, czhu@bupt.edu.cn, tangwenqi@bupt.edu.cn
