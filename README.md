@@ -14,9 +14,9 @@ The divergence between labeled training data and unlabeled testing data is a sig
 
 |        UDA  Scenarios         | mIoU-19 | mIoU-16 | mIoU-13 | mIoU-9 |
 | :---------------------------: | :-----: | :-----: | :-----: | :----: |
-|      GTA5-to-Cityscapes       |  56.2   |    -    |    -    |   -    |
-|     SYNTHIA-to-Cityscapes     |    -    |  54.6   |  61.7   |   -    |
-| Cityscapes-to-Oxford RobotCar |    -    |    -    |    -    |  75.4  |
+|      GTA5-to-Cityscapes       |  56.3   |    -    |    -    |   -    |
+|     SYNTHIA-to-Cityscapes     |    -    |  53.5   |  60.3   |   -    |
+| Cityscapes-to-Oxford RobotCar |    -    |    -    |    -    |  75.2  |
 
 ## Setup
 
