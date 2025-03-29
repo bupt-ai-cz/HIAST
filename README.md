@@ -5,7 +5,7 @@
 🔔 **News:**
 
 * [2025-03-29] The training code with AdaptSeg as warmup model has been released.
-* [2025-03-18] We are happy to announce that HIAST was accepted at T**PAMI2025**.
+* [2025-03-18] We are happy to announce that HIAST was accepted at **TPAMI2025**.
 
 ## Overview
 
