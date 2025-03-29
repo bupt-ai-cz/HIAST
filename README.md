@@ -88,7 +88,7 @@ HIAST
 
 #### Warmup Model
 
-We have provided the warmup model files ([pseudo_resume_from.pth](https://huggingface.co/wanderhzz/HIAST/blob/main/gtav-to-cityscapes/AdaptSeg%2BHIAST/pseudo_resume_from.pth) and [resume_from.pth](https://huggingface.co/wanderhzz/HIAST/blob/main/gtav-to-cityscapes/AdaptSeg%2BHIAST/resume_from.pth)) of GTA5-to-Cityscapes. You need to download them and put them in pretrained_models/ for self-training experiments.
+We have provided the warmup model files ([pseudo_resume_from.pth](https://huggingface.co/wanderhzz/HIAST/blob/main/gtav-to-cityscapes/AdaptSeg%2BHIAST/pseudo_resume_from.pth) and [resume_from.pth](https://huggingface.co/wanderhzz/HIAST/blob/main/gtav-to-cityscapes/AdaptSeg%2BHIAST/resume_from.pth)) of GTA5-to-Cityscapes. You need to download them and put them in pretrained/IAST_warmup/gtav-to-cityscapes/ for self-training experiments.
 
 #### Final Model
 
