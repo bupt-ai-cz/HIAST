@@ -18,12 +18,11 @@ def main_worker(proc_idx, cfg):
 def parse_args():
     parser = argparse.ArgumentParser(description='UDA-Experiment Training')
     parser.add_argument('--config_file', required=True)
-    parser.add_argument('--setting_file', nargs='+')  # receive multiple inputs
+    parser.add_argument('--setting_file')
     parser.add_argument('--resume_from')
     parser.add_argument('--pseudo_save_dir')
-    parser.add_argument('--work_dir')
+    parser.add_argument('--work_dir', required=True)
     parser.add_argument('--seg_model', choices=list(SEG_MODEL.keys()))
-    parser.add_argument('--transform_style', choices=['advent', 'iast'])
     args = parser.parse_args()
 
     return args

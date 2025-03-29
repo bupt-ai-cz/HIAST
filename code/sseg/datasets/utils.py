@@ -6,31 +6,42 @@ import torch
 import numpy as np
 
 
+def str_to_num(list):
+    """Convert string list into number list"""
+    list_unique = np.unique(list)
+    list_unique_len = len(list_unique)
+    new_list = np.array([], dtype=int)
+    for i in list:
+        for j in range(list_unique_len):
+            if list_unique[j] == i:
+                new_list = np.append(new_list, int(j))
+    return new_list
+
+
 def get_path_list(json_path, image_dir):
+    """Get path lists from json file."""
     with open(json_path) as f:
         json_data = json.load(f)
 
     img_path_list = [os.path.join(image_dir, i['image_name']) for i in json_data]
     lbl_path_list = [os.path.join(image_dir, i['mask_name']) for i in json_data]
+    if json_path.split("/")[-1].split("_")[0] == "cityscapes":
+        city_list = [i.split("/")[4] for i in img_path_list]
+        city_list = str_to_num(city_list)
+    else:
+        city_list = [0 for i in img_path_list]
 
-    return img_path_list, lbl_path_list
+    return img_path_list, lbl_path_list, city_list
 
 
-def transform(img, lbl, style='iast'):
+def transform(img, lbl, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
     """
     Image: Normalize + ToTensor
     Label: torch.from_numpy()
     """
-    if style == 'iast':
-        img_trans_fun = torchvision.transforms.Compose([torchvision.transforms.ToTensor(),
-                                                        torchvision.transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))])
-        lbl_trans_fun = lambda x: torch.from_numpy(x).long()
-    elif style == 'advent':
-        img_trans_fun = lambda x: torchvision.transforms.ToTensor()(
-            x[:, :, ::-1].astype(np.float32) - np.array((104.00698793, 116.66876762, 122.67891434), dtype=np.float32))
-        lbl_trans_fun = lambda x: torch.from_numpy(x).long()
-    else:
-        raise ValueError
+    img_trans_fun = torchvision.transforms.Compose([torchvision.transforms.ToTensor(),
+                                                    torchvision.transforms.Normalize(mean, std)])
+    lbl_trans_fun = lambda x: torch.from_numpy(x).long()
 
     if isinstance(img, (list, tuple)):
         img_transformed = [img_trans_fun(i) for i in img]

@@ -26,7 +26,7 @@ class ASPP_V2(nn.Module):
 
 @SEG_MODEL.register('DeepLab_V2')
 class DeepLab_V2(nn.Module):
-    def __init__(self, num_classes=19):
+    def __init__(self, num_classes=19, output_dim=256):
         super(DeepLab_V2, self).__init__()
 
         # resnet-101, modify layer3 and layer4 with dilated convolutions
@@ -35,6 +35,9 @@ class DeepLab_V2(nn.Module):
         self.backbone.layer4.apply(partial(self._nostride_dilate, dilate=4))
 
         self.aspp = ASPP_V2([6, 12, 18, 24], [6, 12, 18, 24], num_classes)
+        self.representation = nn.Sequential(
+            nn.Conv2d(2048, output_dim, 1),
+        )
 
     def _nostride_dilate(self, m, dilate):
         classname = m.__class__.__name__
@@ -54,10 +57,13 @@ class DeepLab_V2(nn.Module):
 
     def forward(self, x):
         x = self.backbone(x)  # [B, 2048, H/8, W/8]
+
         prediction = self.aspp(x)  # [B, 19, H/8, W/8]
 
-        return prediction
+        representation = self.representation(x)  # [B, 256, H/8, W/8]
+        return prediction, x
 
     def get_optimizer_params(self, lr):
         return [{'params': self.backbone.parameters(), "lr": lr},
-                {'params': self.aspp.parameters(), "lr": lr * 10}]  # other sub-blocks have greater lr
+                {'params': self.aspp.parameters(), "lr": lr * 10},  # other sub-blocks have greater lr
+                {'params': self.representation.parameters(), "lr": lr * 10}]

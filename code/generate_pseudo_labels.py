@@ -13,8 +13,6 @@ def parse_args():
     parser.add_argument('--pseudo_save_dir')
     parser.add_argument('--batch_size', type=int)
     parser.add_argument('--seg_model', choices=list(SEG_MODEL.keys()))
-    parser.add_argument('--use_redivided_dataset', action='store_true', help='use redivided dataset for training and validation')
-    parser.add_argument('--transform_style', choices=['advent', 'iast'])
     args = parser.parse_args()
 
     return args

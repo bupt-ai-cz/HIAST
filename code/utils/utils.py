@@ -82,7 +82,7 @@ def load_model(cfg, resume_from=None, student_model=None):
 
         model_state_dict.update(temp_state_dict)
         model.load_state_dict(model_state_dict)
-        print('%% load model from {}, number of matched weights: {}'.format(resume_from, len(temp_state_dict)))
+        print('%% load model from {}'.format(resume_from))
     else:  # load model from scratch
         warnings.warn('not load model')
 

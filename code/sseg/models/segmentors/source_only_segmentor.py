@@ -15,8 +15,8 @@ class SourceOnlySegmentor(nn.Module):
         self.seg_loss_fun = LOSS[cfg.model.predictor.seg_loss.type]
 
     def forward(self, img, lbl=None):
-        logits = self.seg_model(img)  # [B, 19, small_h, small_w]
-        logits = F.interpolate(logits, size=img.shape[2:], mode='bilinear', align_corners=True)  # [B, 19, H, W]
+        logits, _ = self.seg_model(img)
+        logits = F.interpolate(logits, size=img.shape[2:], mode='bilinear', align_corners=True)
 
         if self.training:
             return {'seg_loss': self.cfg.model.predictor.seg_loss.source_weight * self.seg_loss_fun(logits, lbl)}

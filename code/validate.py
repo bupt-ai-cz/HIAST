@@ -13,7 +13,6 @@ def parse_args():
     parser.add_argument('--resume_from')
     parser.add_argument('--color_mask_dir_path')
     parser.add_argument('--seg_model', choices=list(SEG_MODEL.keys()))
-    parser.add_argument('--transform_style', choices=['advent', 'iast'])
     args = parser.parse_args()
     return args
 

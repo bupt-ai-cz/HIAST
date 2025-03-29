@@ -1,0 +1,14 @@
+trainer: 'ConsistencySelfTrainingTrainer'
+dataset:
+  target:
+    aug_type: [ 'MS', 'CCA' ]
+cst_training:
+  is_enabled: True
+  cst_loss:
+    type: 'SoftCE'
+    weight: 0.5
+    region: 'ignored'
+preprocessor:
+  type: 'CopyPaste'
+  copy_paste:
+    selected_num_classes: 14

@@ -1,0 +1,45 @@
+trainer: 'SelfTrainingTrainer'
+work_dir: '../log/gtav-to-citiscapes/sl_2'
+model:
+  type: 'SelfTrainingSegmentor'
+  is_freeze_bn: True
+  predictor:
+    seg_loss:
+      type: 'CE'
+      target_pseudo_weight: 1.0
+    kld_loss:
+      weight: 0.1
+    ent_loss:
+      weight: 1.0
+dataset:
+  num_classes: 19
+  source:
+    type: 'GTAV'
+    json_path: '../data/gtav_train.json'
+    image_dir: '../data/GTA5'
+    aug_type: [ 'MS' ]
+  target:
+    type: 'Cityscapes'
+    json_path: '../data/cityscapes_train.json'
+    image_dir: '../data/cityscapes'
+    aug_type: [ 'MS' ]
+  val:
+    type: 'Cityscapes'
+    json_path: '../data/cityscapes_val.json'
+    image_dir: '../data/cityscapes'
+    resize_size: [ 768, 1536 ]
+pseudo_policy:
+  batch_size: 2
+  resize_size: [ 768, 1536 ]
+  type: 'IAS'
+  ias:
+    alpha: 0.5
+    beta: 0.9
+    gamma: 8.0
+train:
+  batch_size: 6
+  lr: 2e-6
+  optimizer: 'Adam'
+  total_iter: 8000
+  lr_scheduler:
+    type: 'Cosine'

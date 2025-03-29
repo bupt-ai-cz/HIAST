@@ -32,12 +32,12 @@ class AdversarialWarmupSegmentor(nn.Module):
 
     def forward(self, s_img, t_img=None, s_lbl=None):
         # get prediction output of source image
-        s_logits = self.seg_model(s_img)
+        s_logits, _ = self.seg_model(s_img)
         s_logits = F.interpolate(s_logits, size=s_img.shape[2:], mode='bilinear', align_corners=True)
 
         if self.training:
             # get prediction output of target image
-            t_logits = self.seg_model(t_img)
+            t_logits, _ = self.seg_model(t_img)
             t_logits = F.interpolate(t_logits, size=t_img.shape[2:], mode='bilinear', align_corners=True)
 
             losses = {}
@@ -65,7 +65,7 @@ class AdversarialWarmupSegmentor(nn.Module):
 
             return losses
         else:
-            return {'logits': s_logits, 'D_logits': self.D(self.D_preprocess_fun(s_logits))}
+            return {'logits': s_logits}
 
 
 def prob_2_entropy(prob):

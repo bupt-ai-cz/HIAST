@@ -87,4 +87,3 @@ def compute_loss_by_selected_pixel(loss_tensor, refer_labels, ignore_index, regi
     loss_tensor = loss_tensor * mask_  # 将不需要计算的地方置为0
 
     return loss_tensor.sum() / (loss_tensor != 0).sum()
-    # return (loss_tensor * mask_).sum() / mask_.sum()

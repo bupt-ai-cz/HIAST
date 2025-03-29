@@ -8,7 +8,9 @@ import json
 import os
 
 
-def aug(aug_fun, img, lbl):
+def aug(aug_fun, img, lbl, seed=None):
+    if seed is not None:
+        random.seed(seed)
     if isinstance(aug_fun, (list, tuple)):
         return __aug_all(aug_fun, img, lbl)
     else:

@@ -12,7 +12,8 @@ cfg.model.is_freeze_bn = True  # should be True after source only training
 
 # segment model
 cfg.model.seg_model = cn()
-cfg.model.seg_model.type = 'DeepLab_V2'  # 'DeepLab_V2', 'DeepLab_V3P'
+cfg.model.seg_model.type = 'DeepLab_V2'
+cfg.model.seg_model.output_dim = 256  # dimensions of embedding feature
 
 # predictor
 cfg.model.predictor = cn()
@@ -49,7 +50,6 @@ cfg.model.discriminator.D_loss.adv_weight = 0.05
 cfg.dataset = cn()
 cfg.dataset.num_classes = 19  # 19 for GTAV to Citysvapes, 9 for Cityscapes to Oxford RobotCar
 cfg.dataset.num_workers = 2
-cfg.dataset.transform_style = 'iast'
 
 # source dataset
 cfg.dataset.source = cn()
@@ -92,7 +92,7 @@ cfg.pseudo_policy.ias.gamma = 8.0
 # CBST, http://openaccess.thecvf.com/content_ECCV_2018/html/Yang_Zou_Unsupervised_Domain_Adaptation_ECCV_2018_paper.html
 cfg.pseudo_policy.cbst = cn()
 cfg.pseudo_policy.cbst.p = 0.2  # similar with alpha in IAS, controlling the selected pixels of each class
-cfg.pseudo_policy.cbst.sample_interval = 4  # CBST内统计每个类别的预测概率的采样间隔，如果使用所有像素点的话，内存会爆
+cfg.pseudo_policy.cbst.sample_interval = 4  # the sampling interval for counting the prediction probability of each category in CBST. If all pixels are used, the memory will explode
 
 # constant threshold
 cfg.pseudo_policy.ct = cn()
@@ -107,10 +107,11 @@ cfg.train.lr = 1e-4  # learning rates of backbone, learning rates of other modul
 cfg.train.optimizer = 'Adam'  # 'SGD', 'Adam'
 cfg.train.resume_from = None
 cfg.train.apex_opt = 'O1'  # 'O0', 'O1', 'O2', 'O3', https://nvidia.github.io/apex/amp.html#opt-levels
-cfg.train.gpu_num = 1
+cfg.train.gpu_num = 2
 cfg.train.random_seed = 888
 cfg.train.port = 6789  # port for distributed training
 cfg.train.is_save_all = False  # whether save model when report iteration
+cfg.train.is_debug = False
 
 # iteration
 cfg.train.total_iter = 10000
@@ -153,15 +154,29 @@ cfg.cst_training.cst_loss.weight = 1.0
 cfg.cst_training.cst_loss.region = 'ignored'  # 'confident', 'ignored', 'all'
 
 # ==========================================================================================
+# mutual training
+# ==========================================================================================
+cfg.mut_training = cn()
+cfg.mut_training.is_enabled = False
+cfg.mut_training.resume_from = None  # counterpart model resume from
+cfg.mut_training.is_strong_input = False  # whether the image input to another network has undergone strong augmentation during mutual learning
+
+# mutual loss
+cfg.mut_training.mut_loss = cn()
+cfg.mut_training.mut_loss.weight = 0.1
+cfg.mut_training.mut_loss.region = 'ignored'
+
+# ==========================================================================================
 # data preprocess policy (ClassMix, CutMix, Copy Paste)
 # ==========================================================================================
 cfg.preprocessor = cn()
-cfg.preprocessor.type = None  # 'CopyPaste', 'CutMix', 'ClassMix'
+cfg.preprocessor.type = None  # 'CopyPaste', 'CutMix', 'ClassMix' only support 'CopyPaste' now
 
 # Copy Paste
 cfg.preprocessor.copy_paste = cn()
-cfg.preprocessor.copy_paste.mode = 'original'  # 'original', 'consistency', 'multi-scales-prevent-destruction'
+cfg.preprocessor.copy_paste.mode = 'original'  # 'original', 'consistency', 'multi-scales-prevent-destruction' only support 'original' now
+cfg.preprocessor.copy_paste.name = 'normal'
 
 ## general setting of copy paste
-cfg.preprocessor.copy_paste.copy_from = 'target'  # 'target', 'source', 表示从哪一个数据集内CP
-cfg.preprocessor.copy_paste.selected_num_classes = 14  # 对于每张图像，选择多少个类别
+cfg.preprocessor.copy_paste.selected_num_classes = 14  # how many categories are selected for each image
+cfg.preprocessor.copy_paste.gamma = 0.99
