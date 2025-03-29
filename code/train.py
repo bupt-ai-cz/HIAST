@@ -33,11 +33,8 @@ def update_cfg(cfg, args):
 
     # update cfg with according files
     cfg.merge_from_file(args.config_file)
-    print('%% use config file: {}'.format(args.config_file))
     if args.setting_file:
-        for f_ in args.setting_file:
-            cfg.merge_from_file(f_)
-        print('%% use extra setting file: {}'.format(args.setting_file))
+        cfg.merge_from_file(args.setting_file)
 
     if args.work_dir:
         cfg.work_dir = args.work_dir
@@ -60,10 +57,7 @@ def update_cfg(cfg, args):
     # search an available port
     while utils.is_port_used(cfg.train.port):
         cfg.train.port += 1
-
-    if args.transform_style:
-        cfg.dataset.transform_style = args.transform_style
-
+        
     cfg.freeze()
 
     return cfg
