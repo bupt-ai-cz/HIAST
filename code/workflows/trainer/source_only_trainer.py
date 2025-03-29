@@ -6,7 +6,9 @@ from utils.registry.registries import TRAINER
 @TRAINER.register('SourceOnlyTrainer')
 class SourceOnlyTrainer(BaseTrainer):
 
-    def train(self, current_iter):
+    def train(self):
+        self.model.train()
+
         try:
             s = next(self.s_iter)
         except StopIteration:
@@ -17,7 +19,6 @@ class SourceOnlyTrainer(BaseTrainer):
         s_img = s['images'].cuda()
         s_lbl = s['labels'].cuda()
 
-        self.model.train()
         losses = self.model(s_img, s_lbl)
 
         return losses

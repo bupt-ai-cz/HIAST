@@ -10,7 +10,9 @@ class AdversarialWarmupTrainer(BaseTrainer):
         assert self.cfg.model.discriminator.is_enabled, 'discriminator should be enabled for adversarial warmup training'
         assert self.cfg.train.resume_from is not None, 'adversarial warmup training should resume_from one state_dict'
 
-    def train(self, current_iter):
+    def train(self):
+        self.model.train()
+
         try:
             s = next(self.s_iter)
         except StopIteration:
@@ -30,7 +32,6 @@ class AdversarialWarmupTrainer(BaseTrainer):
             t = next(self.t_iter)
         t_img = t['images'].cuda()
 
-        self.model.train()
         losses = self.model(s_img, t_img, s_lbl)
 
         return losses

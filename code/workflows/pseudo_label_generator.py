@@ -15,9 +15,11 @@ class BasePseudoGenerator:
 
     def __init__(self, cfg):
         self.cfg = cfg
+        self.statics_class = np.array([0] * self.cfg.dataset.num_classes)
+        self.sample_stats = []
         self.samples_class = {i:[] for i in range(self.cfg.dataset.num_classes)}
         self.class_mean_probs = np.zeros(self.cfg.dataset.num_classes)
-
+        
         self.initialize()
 
     def initialize(self):
@@ -47,14 +49,17 @@ class BasePseudoGenerator:
         if self.class_threshold is not None:
             print('class threshold: {}'.format(self.class_threshold))
             np.save(os.path.join(self.pseudo_label_save_dir, '..', 'class_threshold.npy'), self.class_threshold)
-
+        print('class statics number: {}'.format(self.statics_class))
+        np.save(os.path.join(self.pseudo_label_save_dir, '..', 'statics_class.npy'), self.statics_class)
         print('class mean probabilities: {}'.format(self.class_mean_probs))
         np.save(os.path.join(self.pseudo_label_save_dir, '..', 'class_mean_probabilities.npy'), self.class_mean_probs)
-        
+
+        stats_json = json.dumps(self.sample_stats)
+        with open(os.path.join(self.pseudo_label_save_dir, '..', 'sample_class_stats.json'), 'a') as f:
+            f.write(stats_json)
         class_json = json.dumps(self.samples_class)
         with open(os.path.join(self.pseudo_label_save_dir, '..', 'samples_with_class.json'), 'a') as f:
             f.write(class_json)
-
         
     def run(self):
         raise NotImplementedError
@@ -64,6 +69,7 @@ class BasePseudoGenerator:
 
         # select confident regions as pseudo label according to class threshold
         for prob_pred, lbl_pred, img_path in zip(probs_pred, lbls_pred, img_paths):
+            current_stats = {}
             if self.class_threshold is not None:
                 lbl_class_threshold = np.apply_along_axis(lambda x: [self.class_threshold[e] for e in x], 1, lbl_pred)
                 ignored_index = prob_pred < lbl_class_threshold
@@ -73,11 +79,14 @@ class BasePseudoGenerator:
             else:  # argmax for no threshold policy
                 plbl = lbl_pred
 
-            # add current sample to class i
             for i in range(self.cfg.dataset.num_classes):
                 pix_num = int(sum(sum((plbl == i))))
                 if pix_num != 0:
-                    self.samples_class[i].append([img_path, pix_num])
+                    current_stats[i] = pix_num
+                    self.samples_class[i].append([img_path, current_stats[i]])
+                    self.statics_class[i] += current_stats[i]
+            current_stats['file'] = img_path
+            self.sample_stats.append(current_stats)
 
             self.save_pseudo_label(plbl, img_path)
 
@@ -134,7 +143,7 @@ class NoThresholdPseudoGenerator(ConstantThresholdPseudoGenerator):
 class CBSTPseudoGenerator(ConstantThresholdPseudoGenerator):
 
     def get_constant_threshold(self):
-        class_probs_dict = {c: [] for c in range(self.cfg.dataset.num_classes)}  # 存储每个类别的所有点的预测概率
+        class_probs_dict = {c: [] for c in range(self.cfg.dataset.num_classes)}  # store the prediction probability of all points in each category
         self.model.eval()
         with torch.no_grad():
             for data in tqdm.tqdm(self.t_loader, desc='Computing thresholds of CBST', ncols=160):
@@ -146,12 +155,12 @@ class CBSTPseudoGenerator(ConstantThresholdPseudoGenerator):
                 lbls_pred = lbls_pred.cpu().numpy()
 
                 for c in range(self.cfg.dataset.num_classes):
-                    temp_prob_list = probs_pred[lbls_pred == c].astype(np.float16)  # 该Batch内所有被预测为类别cls的像素点的预测概率
-                    class_probs_dict[c].extend(temp_prob_list[0:len(temp_prob_list):self.cfg.pseudo_policy.cbst.sample_interval])  # 等间隔采样保存
+                    temp_prob_list = probs_pred[lbls_pred == c].astype(np.float16)  # prediction probability of all pixels predicted as cls in the batch
+                    class_probs_dict[c].extend(temp_prob_list[0:len(temp_prob_list):self.cfg.pseudo_policy.cbst.sample_interval])  # equal interval sampling save
 
         class_threshold = np.ones(self.cfg.dataset.num_classes)
         for c in range(self.cfg.dataset.num_classes):
-            class_threshold[c] = np.quantile(class_probs_dict[c], 1 - self.cfg.pseudo_policy.cbst.p)  # 对于每个类别，选择预测概率的上P分数作为阈值
+            class_threshold[c] = np.quantile(class_probs_dict[c], 1 - self.cfg.pseudo_policy.cbst.p)  # for each category, select the upper p-score of the prediction probability as the threshold
 
         return class_threshold
 
@@ -175,17 +184,17 @@ class IASPseudoGenerator(BasePseudoGenerator):
         else:
             self.class_threshold = 0.9 * np.ones(self.cfg.dataset.num_classes)
             self.model.eval()
+                
             with torch.no_grad():
                 for data in tqdm.tqdm(self.t_loader, desc='Generating pseudo labels (policy: {})'.format(self.cfg.pseudo_policy.type), ncols=160):
                     imgs = data['images'].cuda()
                     result = self.model(imgs)
                     probs = F.softmax(result['logits'], dim=1)
-
                     probs_pred, lbls_pred = probs.max(dim=1)
                     probs_pred = probs_pred.cpu().numpy()
                     lbls_pred = lbls_pred.cpu().numpy()
 
-                    # 记录当前batch内被预测为每个类别的像素点概率
+                    # record the probability of pixels predicted as each category in the current batch
                     class_probs_dict = {c: [self.class_threshold[c]] for c in range(self.cfg.dataset.num_classes)}
                     print(len(class_probs_dict[0]))
                     for c in range(self.cfg.dataset.num_classes):
@@ -194,10 +203,11 @@ class IASPseudoGenerator(BasePseudoGenerator):
                     # update IAS threshold
                     temp_class_threshold = self.get_ias_threshold(class_probs_dict, self.cfg.dataset.num_classes, self.cfg.pseudo_policy.ias.alpha,
                                                                   self.class_threshold, self.cfg.pseudo_policy.ias.gamma)
+                    print(temp_class_threshold)
                     self.class_threshold = self.cfg.pseudo_policy.ias.beta * self.class_threshold + \
                                            (1 - self.cfg.pseudo_policy.ias.beta) * temp_class_threshold
                     self.class_threshold[self.class_threshold >= 1] = 0.999
 
-                    self.select_and_save_confident_label(probs_pred, lbls_pred, data['image_paths'])
+                    select_plbl = self.select_and_save_confident_label(probs_pred, lbls_pred, data['image_paths'])
 
             self.save_data()

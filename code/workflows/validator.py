@@ -5,10 +5,9 @@ from torch.nn import functional as F
 from utils import metrics, utils
 import numpy as np
 import os
-from utils.registry.registries import DATASET, MODEL, LOSS
+from utils.registry.registries import DATASET
 from torch.utils.data import DataLoader
 from PIL import Image
-from functools import partial
 
 
 class Validator():
@@ -56,7 +55,7 @@ class Validator():
         return sum(pred_result_list)
 
     def colorize_mask(self, mask):
-        # 这里的palette其实就是每个类别的颜色的RGB值组成的，例如[c1_r, c1_g, c1_b, c2_r, c2_g, c2_b, ......]
+        # the palette here is actually composed of RGB values of colors of each category, such as [c1_r, c1_g, c1_b, c2_r, c2_g, c2_b, ......]
         if self.cfg.dataset.num_classes == 19:  # GTAV/SYN-to-Cityscapes
             palette = [128, 64, 128, 244, 35, 232, 70, 70, 70, 102, 102, 156, 190, 153, 153, 153, 153, 153, 250, 170, 30,
                        220, 220, 0, 107, 142, 35, 152, 251, 152, 70, 130, 180, 220, 20, 60, 255, 0, 0, 0, 0, 142, 0, 0, 70,
@@ -77,9 +76,6 @@ class Validator():
             color_mask.save(save_path)
 
     def run(self):
-        print('%% dataset type: {}'.format(self.cfg.dataset.val.type))
-        print('%% image_dir: {}'.format(self.cfg.dataset.val.image_dir))
-        print('%% json_path: {}'.format(self.cfg.dataset.val.json_path))
         print('%% batch_size: {}'.format(self.cfg.validate.batch_size))
         print('%% num_classes: {}'.format(self.cfg.dataset.num_classes))
         print('%% resize_sizes: {}'.format(self.cfg.validate.resize_sizes))
@@ -99,7 +95,7 @@ class Validator():
                 results = self.get_multi_scale_and_flip_logits(imgs)
                 lbls_pred = results.argmax(dim=1)
 
-                intersection, union = metrics.intersectionAndUnionGPU(lbls_pred.clone(), lbls, self.cfg.dataset.num_classes)
+                intersection, union = metrics.intersectionAndUnionGPU(lbls_pred, lbls, self.cfg.dataset.num_classes)
                 intersection_sum += intersection
                 union_sum += union
 
@@ -117,4 +113,3 @@ class Validator():
             print('miou_16: {:.4f}, miou_13: {:.4f}, iou: {}'.format(miou, miou_13, {c: round(v, 4) for c, v in enumerate(iou)}))
         else:
             print('miou: {:.4f}, iou: {}'.format(miou, {c: round(v, 4) for c, v in enumerate(iou)}))
-        print('=' * 160)

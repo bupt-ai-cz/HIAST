@@ -102,7 +102,7 @@ class BaseTrainer:
 
         for current_iter in range(1, self.cfg.train.total_iter + 1):
             # get training loss
-            temp_losses = self.train(current_iter)
+            temp_losses = self.train()
 
             # loss backward and update model
             self.update_model(self.g_optimizer, self.d_optimizer, temp_losses)
@@ -140,7 +140,7 @@ class BaseTrainer:
                 scaled_loss.backward()
             d_optimizer.step()
 
-    def train(self, current_iter):
+    def train(self):
         raise NotImplementedError
 
     def validate(self, model, recorder, current_iter, is_ema=False):

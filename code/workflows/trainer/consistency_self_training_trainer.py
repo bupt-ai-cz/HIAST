@@ -1,29 +1,50 @@
 # -*- coding: utf-8 -*
 import torch
+from torch.utils.data import DataLoader, DistributedSampler
 from torch.nn import functional as F
-from workflows.trainer.preprocessor_self_training_trainer import PreprocessorSelfTrainingTrainer
+from workflows.trainer.base_trainer import BaseTrainer
 from utils import utils
 from utils.result_recorder import ResultRecorder
 from apex import amp
-from utils.registry.registries import TRAINER
+from sseg.datasets.preprocessor import CopyPaste
+import numpy as np
+import torch.distributed as dist
+import os
+from utils.registry.registries import TRAINER, DATASET
 
 
 @TRAINER.register('ConsistencySelfTrainingTrainer')
-class ConsistencySelfTrainingTrainer(PreprocessorSelfTrainingTrainer):
+class ConsistencySelfTrainingTrainer(BaseTrainer):
 
     def assert_cfg(self):
         assert self.cfg.dataset.target.pseudo_dir is not None, 'directory of pseudo labels should be given for self training'
-        assert self.cfg.train.resume_from is not None, 'self-training should resume_from one state_dict'
         assert self.cfg.cst_training.is_enabled, 'consistency training should be enabled'
-        assert self.cfg.cst_training.cst_loss.weight > 0, 'consistency loss should be larger than 0'
+        # assert self.cfg.cst_training.cst_loss.weight > 0, 'consistency loss should be larger than 0'
         assert len(self.cfg.dataset.target.aug_type) == 1 or len(self.cfg.dataset.target.aug_type) == 2, \
             'target domain dataset should have 1 or 2 augmentations for consistency training'
+        assert self.cfg.preprocessor.type == 'CopyPaste'
+
+    def build_train_data_reader(self):        
+        # init copy paste
+        init_class_value_path = os.path.join(self.cfg.dataset.target.pseudo_dir, '..', 'class_mean_probabilities.npy')
+        self.class_value = np.load(init_class_value_path)
+
+        self.t_dataset = DATASET[self.cfg.dataset.target.type](self.cfg,
+                                                               self.cfg.dataset.target.json_path,
+                                                               self.cfg.dataset.target.image_dir,
+                                                               pseudo_dir=self.cfg.dataset.target.pseudo_dir,
+                                                               aug_type=self.cfg.dataset.target.aug_type,
+                                                               num_classes=self.cfg.dataset.num_classes)
+        self.preprocessor = CopyPaste(self.cfg, self.t_dataset, self.class_value)
+        self.t_dataset.set_preprocessor(self.preprocessor)
+
+        self.t_sampler = DistributedSampler(self.t_dataset, num_replicas=self.cfg.train.gpu_num, rank=self.gpu_index, shuffle=True)
+        self.t_loader = DataLoader(self.t_dataset, self.cfg.train.batch_size, sampler=self.t_sampler, num_workers=self.cfg.dataset.num_workers,
+                                   pin_memory=True, drop_last=True)
+        self.t_iter = iter(self.t_loader)
 
     def build_all_model(self):
         super(ConsistencySelfTrainingTrainer, self).build_all_model()
-
-        # build ema model
-        print('%% initialize ema model')
         self.ema_model = utils.init_model(self.cfg, student_model=self.model).cuda()
         self.ema_model = amp.initialize(self.ema_model, verbosity=0)
         self.ema_model_recorder = ResultRecorder(self.cfg, self.gpu_index, None, None, 'ema_model',
@@ -40,12 +61,13 @@ class ConsistencySelfTrainingTrainer(PreprocessorSelfTrainingTrainer):
 
         for current_iter in range(1, self.cfg.train.total_iter + 1):
             # get training loss
-            temp_losses = self.train(current_iter)
+            temp_losses = self.train()
 
             # loss backward and update model
             self.update_model(self.g_optimizer, self.d_optimizer, temp_losses)
             # update ema model
             if current_iter % self.cfg.cst_training.ema_model.iter_update == 0:
+                # https://github.com/microsoft/ProDA/blob/9ba80c7dbbd23ba1a126e3f4003a72f27d121a1f/models/adaptation_modelv2.py#L261-L265
                 self.ema_model = utils.update_ema_model(self.ema_model, self.model, self.cfg.cst_training.ema_model.gamma)
 
             # update scheduler
@@ -67,7 +89,7 @@ class ConsistencySelfTrainingTrainer(PreprocessorSelfTrainingTrainer):
         self.model_recorder.report_end_info()
         self.ema_model_recorder.report_end_info()
 
-    def train(self, current_iter):
+    def train(self):
         try:
             t = next(self.t_iter)
         except StopIteration:
@@ -99,7 +121,6 @@ class ConsistencySelfTrainingTrainer(PreprocessorSelfTrainingTrainer):
         self.model.train()
         t_strong_logits = self.model(t_strong_img)['logits']
 
-        # https://discuss.pytorch.org/t/average-loss-in-dp-and-ddp/93306/3，按照这个回答的意思，只要损失被backward，梯度就会在多个进程内被平均，DDP会自动控制的
         losses = self.model.module.compute_loss(t_strong_logits, t_plbl, t_cst_lbl)
-        
+
         return losses

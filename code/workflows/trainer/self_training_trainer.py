@@ -10,7 +10,7 @@ class SelfTrainingTrainer(BaseTrainer):
         assert self.cfg.dataset.target.pseudo_dir is not None, 'directory of pseudo labels should be given for self training'
         assert self.cfg.train.resume_from is not None, 'self-training should resume_from one state_dict'
 
-    def train(self, current_iter):
+    def train(self):
         try:
             t = next(self.t_iter)
         except StopIteration:
