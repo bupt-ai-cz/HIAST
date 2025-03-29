@@ -54,6 +54,14 @@ pip install -r requirements.txt
 
 3. Install [apex](https://github.com/NVIDIA/apex#linux) for easy mixed precision and distributed training in Pytorch. If you encounter problems, please see this [solution](https://github.com/NVIDIA/apex/issues/802#issuecomment-618699214).
 
+```bash
+git clone https://github.com/NVIDIA/apex.git
+cd apex
+git checkout f3a960f80244cf9e80558ab30f7f7e8cbf03c0a0
+pip install -v --disable-pip-version-check --no-cache-dir ./ # python version
+
+```
+
 ### Dataset
 
 1. Download dataset.
@@ -88,11 +96,11 @@ HIAST
 
 #### Warmup Model
 
-We have provided the warmup model files ([pseudo_resume_from.pth](https://huggingface.co/wanderhzz/HIAST/blob/main/gtav-to-cityscapes/AdaptSeg%2BHIAST/pseudo_resume_from.pth) and [resume_from.pth](https://huggingface.co/wanderhzz/HIAST/blob/main/gtav-to-cityscapes/AdaptSeg%2BHIAST/resume_from.pth)) of GTA5-to-Cityscapes. You need to download them and put them in pretrained/IAST_warmup/gtav-to-cityscapes/ for self-training experiments.
+We have provided the warmup model files ([pseudo_resume_from.pth](https://huggingface.co/wanderhzz/HIAST/blob/main/gtav-to-cityscapes/AdaptSeg%2BHIAST/pseudo_resume_from.pth) and [resume_from.pth](https://huggingface.co/wanderhzz/HIAST/blob/main/gtav-to-cityscapes/AdaptSeg%2BHIAST/resume_from.pth)) of GTA5-to-Cityscapes. You need to download them and put them in pretrained/gtav-to-cityscapes for self-training experiments.
 
 #### Final Model
 
-We have also provided the final [model file](https://huggingface.co/wanderhzz/HIAST/blob/main/gtav-to-cityscapes/AdaptSeg%2BHIAST/HIAST_final.pth) of GTA5-to-Cityscapes for evaluation. You can download it to verify the performance.
+We have also provided the final [model file](https://huggingface.co/wanderhzz/HIAST/blob/main/gtav-to-cityscapes/AdaptSeg%2BHIAST/HIAST_final.pth) of GTA5-to-Cityscapes for evaluation. You can download it and put it in pretrained/gtav-to-cityscapes to verify the performance.
 
 ## Training
 
@@ -105,7 +113,7 @@ sh train.sh
 
 ```bash
 cd code
-python validate.py --config_file configs/validate.yaml --resume_from pretrained/HIAST_final.pth --color_mask_dir_path ../outputs
+python validate.py --config_file configs/validate.yaml --resume_from ../pretrained/gtav-to-cityscapes/HIAST_final.pth --color_mask_dir_path ../outputs
 ```
 
 ## Contact

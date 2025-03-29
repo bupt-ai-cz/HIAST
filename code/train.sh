@@ -5,13 +5,13 @@ work_dir=../log/gtav-to-citiscapes/hiast
 # generate pseudo labels with pseudo_resume_from.pth and resume_from.pth from warmup phase
 python generate_pseudo_labels.py \
     --config_file configs/sl_1.yaml \
-    --pseudo_resume_from ../pretrained/IAST_warmup/gtav-to-cityscapes/pseudo_resume_from.pth \
+    --pseudo_resume_from ../pretrained/gtav-to-cityscapes/pseudo_resume_from.pth \
     --pseudo_save_dir $work_dir/sl_1/pseudo_label/gray_label
 
 python train.py \
     --config_file configs/sl_1.yaml \
     --setting_file $setting_file \
-    --resume_from ../pretrained/IAST_warmup/gtav-to-cityscapes/resume_from.pth \
+    --resume_from ../pretrained/gtav-to-cityscapes/resume_from.pth \
     --pseudo_save_dir $work_dir/sl_1/pseudo_label/gray_label \
     --work_dir $work_dir/sl_1
 

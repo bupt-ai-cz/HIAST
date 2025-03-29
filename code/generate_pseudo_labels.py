@@ -35,9 +35,6 @@ def update_cfg(cfg, args):
     if args.seg_model:
         cfg.model.seg_model.type = args.seg_model
 
-    if args.transform_style:
-        cfg.dataset.transform_style = args.transform_style
-
     cfg.freeze()
 
     return cfg
