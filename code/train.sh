@@ -2,7 +2,7 @@ setting_file=configs/hiast_setting.yaml
 work_dir=../log/gtav-to-citiscapes/hiast
 
 # sl_1
-# generate pseudo labels with pseudo_resume_from.pth and resume_from.pth from warmup phase
+# generate pseudo labels with pseudo_resume_from.pth from warmup phase
 python generate_pseudo_labels.py \
     --config_file configs/sl_1.yaml \
     --pseudo_resume_from ../pretrained/gtav-to-cityscapes/pseudo_resume_from.pth \
